@@ -1,125 +1,115 @@
 <template>
-  <div @click="clickHandle">
-
-    <div class="userinfo" @click="bindViewTap">
-      <img class="userinfo-avatar" v-if="userInfo.avatarUrl" :src="userInfo.avatarUrl" background-size="cover" />
-      <img class="userinfo-avatar" src="/static/images/user.png" background-size="cover" />
-
-      <div class="userinfo-nickname">
-        <card :text="userInfo.nickName"></card>
-      </div>
+  <div>
+    <!-- 搜索框 -->
+    <search-bar></search-bar>
+    <!-- 轮播图 -->
+    <swiper indicator-dots="true" autoplay="true">
+      <swiper-item v-for="item in swiper" :key="item.goods_id">
+        <img :src="item.image_src" alt />
+      </swiper-item>
+    </swiper>
+    <!-- 菜单 -->
+    <div class="menu">
+      <img v-for="(item, index) in cate" :key="index" :src="item.image_src" alt="">
     </div>
-
-    <div class="usermotto">
-      <div class="user-motto">
-        <card :text="motto"></card>
+    <!-- 商品 -->
+    <div class="floor" v-for="(item, index) in floor" :key="index">
+      <div class="title">
+        <img :src="item.floor_title.image_src" alt="">
       </div>
-    </div>
-
-    <form class="form-container">
-      <input type="text" class="form-control" :value="motto" placeholder="v-model" />
-      <input type="text" class="form-control" v-model="motto" placeholder="v-model" />
-      <input type="text" class="form-control" v-model.lazy="motto" placeholder="v-model.lazy" />
-    </form>
-
-
-    <div class="all">
+      <div class="content">
         <div class="left">
+          <img :src="item.product_list[0].image_src" alt="">
         </div>
         <div class="right">
+          <img v-if="i>0" v-for="(img, i) in item.product_list" :key="i" :src="img.image_src" alt="">
         </div>
+      </div>
+    </div>
+    <!-- 回到顶部 -->
+    <div class="toTop" v-if="isShow" @click="toTop">
+      ︿
+      <div>顶部</div>
     </div>
   </div>
 </template>
 
 <script>
-import card from '@/components/card'
-
+import searchBar from "../../components/searchBar";
 export default {
-  data () {
+  data() {
     return {
-      motto: 'Hello miniprograme',
-      userInfo: {
-        nickName: 'mpvue',
-        avatarUrl: 'http://mpvue.com/assets/logo.png'
-      }
-    }
+      swiper: [],
+      cate: [],
+      floor: [],
+      isShow: false
+    };
   },
 
   components: {
-    card
+    "search-bar": searchBar
   },
 
   methods: {
-    bindViewTap () {
-      const url = '../logs/main'
-      if (mpvuePlatform === 'wx') {
-        mpvue.switchTab({ url })
-      } else {
-        mpvue.navigateTo({ url })
-      }
+    toTop() {
+      wx.pageScrollTo({
+        scrollTop: 0
+      })
     },
-    clickHandle (ev) {
-      console.log('clickHandle:', ev)
-      // throw {message: 'custom test'}
+    initIndex() {
+      this.swiperData()
+      this.cateData()
+      this.floorData()
+    },
+    swiperData() {
+      wx.request({
+        url: "https://www.zhengzhicheng.cn/api/public/v1/home/swiperdata",
+        success: res => {
+          // console.log(res)
+          if (res.data.meta.status === 200) {
+            this.swiper = res.data.message;
+            // console.log(this.swiper);
+          }
+        }
+      });
+    },
+    cateData() {
+      wx.request({
+        url: "https://www.zhengzhicheng.cn/api/public/v1/home/catitems",
+        success: res => {
+          // console.log(res)
+          if (res.data.meta.status === 200) {
+            this.cate = res.data.message
+            console.log(this.cate)
+          }
+        }
+      })
+    },
+    floorData() {
+      wx.request({
+        url: "https://www.zhengzhicheng.cn/api/public/v1/home/floordata",
+        success: res => {
+          // console.log(res)
+          if (res.data.meta.status === 200) {
+            this.floor = res.data.message
+            console.log(this.floor)
+          }
+        }
+      })
     }
   },
-
-  created () {
-    // let app = getApp()
+  created() {
+    this.initIndex()
+  },
+  onPageScroll(e) {
+      this.isShow = e.scrollTop > 100
+  },
+  onPullDownRefresh() {
+    this.initIndex()
   }
 }
 </script>
 
-<style scoped>
-.userinfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.userinfo-avatar {
-  width: 128rpx;
-  height: 128rpx;
-  margin: 20rpx;
-  border-radius: 50%;
-}
-
-.userinfo-nickname {
-  color: #aaa;
-}
-
-.usermotto {
-  margin-top: 150px;
-}
-
-.form-control {
-  display: block;
-  padding: 0 12px;
-  margin-bottom: 5px;
-  border: 1px solid #ccc;
-}
-.all{
-  width:7.5rem;
-  height:1rem;
-  background-color:blue;
-}
-.all:after{
-  display:block;
-  content:'';
-  clear:both;
-}
-.left{
-  float:left;
-  width:3rem;
-  height:1rem;
-  background-color:red;
-}
-
-.right{
-  float:left;
-  width:4.5rem;
-  height:1rem;
-  background-color:green;
-}
+<style scoped lang="less">
+@import "./main.less";
 </style>
